@@ -1,0 +1,44 @@
+baseURL = "http://localhost:1313/"
+languageCode = "en-us"
+title = "Bliss"
+theme = "vector-simple"
+
+[markup.tableOfContents]
+startLevel = 2
+endLevel = 4
+ordered = false
+
+[markup.highlight]
+noClasses = false
+lineNos = false
+
+[[menus.sidebar]]
+name = "Home"
+pageRef = "/"
+weight = 1
+
+[[menus.sidebar]]
+name = "About"
+pageRef = "/about"
+weight = 2
+
+[[menus.sidebar]]
+name = "Solarius?"
+pageRef = "/solarius"
+weight = 3
+[menus.sidebar.params]
+heading = "SolME"
+
+[[menus.sidebar]]
+name = "ClimaX?"
+pageRef = "/climax"
+weight = 6
+[menus.sidebar.params]
+heading = "ClimaX"
+
+[[menus.sidebar]]
+name = "SmallSol"
+pageRef = "/smallsol"
+weight = 42
+[menus.sidebar.params]
+heading = "Guides"

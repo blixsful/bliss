@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="{{ site.Language.Lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} - {{ site.Title }}{{ end }}</title>
+  {{ $css := slice (resources.Get "css/chroma.css") (resources.Get "css/main.css") | resources.Concat "css/bundle.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}">
+</head>
+<body>
+  <div id="page-base"></div>
+  <div id="tabs"><a href="{{ .RelPermalink }}">Article</a></div>
+  <div id="content">
+    <h1 class="title">{{ .Title }}</h1>
+    {{ block "main" . }}{{ end }}
+  </div>
+  {{ partial "sidebar.html" . }}
+  <div id="footer">{{ site.Title }}</div>
+</body>
+</html>

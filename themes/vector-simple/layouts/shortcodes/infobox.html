@@ -1,0 +1,15 @@
+{{ $img := .Get "image" }}
+<table class="infobox">
+  <caption>{{ .Get "title" }}</caption>
+  <tbody>
+    {{ with $img }}
+    <tr>
+      <td colspan="2" class="infobox-image">
+        <a href="{{ $.Get "commons" | default . }}"><img src="{{ if hasPrefix . "http" }}{{ . }}{{ else }}{{ . | relURL }}{{ end }}" alt="{{ $.Get "caption" }}" loading="lazy"></a>
+        {{ with $.Get "caption" }}<div class="infobox-caption">{{ . | markdownify }}</div>{{ end }}
+      </td>
+    </tr>
+    {{ end }}
+    {{ .Inner | safeHTML }}
+  </tbody>
+</table>

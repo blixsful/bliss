@@ -1,0 +1,9 @@
+{{ define "main" }}
+{{ $content := .Content }}
+{{ if gt (len .TableOfContents) 80 }}
+  {{ $toc := printf `<div id="toc"><div class="toctitle"><h2>Contents</h2></div>%s</div>` .TableOfContents }}
+  {{ $toc = replace $toc "$" "$$" }}
+  {{ $content = replaceRE `<h2` (printf "%s<h2" $toc) $content 1 }}
+{{ end }}
+<div class="body">{{ $content | safeHTML }}</div>
+{{ end }}

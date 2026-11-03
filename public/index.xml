@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+	<channel>
+		<title>Home on Bliss</title>
+		<link>http://localhost:1313/</link>
+		<description>Recent content in Home on Bliss</description>
+		<generator>Hugo</generator>
+		<language>en-us</language>
+		
+		
+		
+		
+			<atom:link href="http://localhost:1313/index.xml" rel="self" type="application/rss+xml" />
+			<item>
+				<title></title>
+				<link>http://localhost:1313/aquaris/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/aquaris/</guid>
+				<description></description>
+			</item>
+			<item>
+				<title>About</title>
+				<link>http://localhost:1313/about/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/about/</guid>
+				<description>&lt;p&gt;Web biasa, dibuat sama &lt;code&gt;blixsful&lt;/code&gt;.&lt;/p&gt;&#xA;&lt;h2 id=&#34;links&#34;&gt;Links&lt;/h2&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;a href=&#34;https://github.com/blixsful&#34;&gt;Github&lt;/a&gt;&lt;/li&gt;&#xA;&lt;/ul&gt;</description>
+			</item>
+			<item>
+				<title>Climax?</title>
+				<link>http://localhost:1313/climax/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/climax/</guid>
+				<description>&lt;table class=&#34;infobox&#34;&gt;&#xD;&#xA;  &lt;caption&gt;ClimaX&lt;/caption&gt;&#xD;&#xA;  &lt;tbody&gt;&#xD;&#xA;    &#xD;&#xA;    &#xD;&#xA;&lt;tr&gt;&lt;th&gt;Developer&lt;/th&gt;&lt;td&gt;Blixsful / Rhadea&lt;/td&gt;&lt;/tr&gt;&#xD;&#xA;&lt;tr&gt;&lt;th&gt;Written in&lt;/th&gt;&lt;td&gt;C++&lt;/td&gt;&lt;/tr&gt;&#xD;&#xA;&lt;tr&gt;&lt;th&gt;Architecture&lt;/th&gt;&lt;td&gt;i386 or later&lt;/td&gt;&lt;/tr&gt;&#xD;&#xA;&#xD;&#xA;  &lt;/tbody&gt;&#xD;&#xA;&lt;/table&gt;&#xA;&lt;p&gt;ClimaX adalah sistem operasi Unix dengan kernel &amp;ldquo;AquaRIS&amp;rdquo;. Adalah reimplementasi dari OpenSolaris atau Illumos.&lt;/p&gt;</description>
+			</item>
+			<item>
+				<title>SmallSol</title>
+				<link>http://localhost:1313/smallsol/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/smallsol/</guid>
+				<description>&lt;p&gt;Panduan untuk membuat machine emulator kecil menggunakan go.&lt;/p&gt;&#xA;&lt;p&gt;Requirements:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;Pengetahuan dasar tentang golang, dan pengetahuan lebih lanjut dalam pemrograman.&lt;/li&gt;&#xA;&lt;li&gt;Host OS Linux / WSL (opsional, disarankan)&lt;/li&gt;&#xA;&lt;li&gt;Golang terinstall&lt;/li&gt;&#xA;&lt;li&gt;riscv64-unknown-elf-gcc terinstall&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;p&gt;Panduan ini akan memandu proses pembuatan emulasi mesin untuk RISC-V RV32i.&lt;/p&gt;&#xA;&lt;h2 id=&#34;konsep-dasar--permulaan&#34;&gt;Konsep Dasar &amp;amp; Permulaan&lt;/h2&gt;&#xA;&lt;p&gt;CPU RV32I hanya butuh beberapa komponen:&#xA;• 32 register 32-bit (x0–x31). x0 selalu bernilai 0.&#xA;• Program counter (PC), alamat instruksi berikutnya.&#xA;• Memori berupa array byte, little-endian.&#xA;• Siklus fetch → decode → execute, diulang terus sampai program berhenti.&lt;/p&gt;</description>
+			</item>
+			<item>
+				<title>Solarius..?</title>
+				<link>http://localhost:1313/solarius/</link>
+				<pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+				<guid>http://localhost:1313/solarius/</guid>
+				<description>&lt;table class=&#34;infobox&#34;&gt;&#xD;&#xA;  &lt;caption&gt;SolME&lt;/caption&gt;&#xD;&#xA;  &lt;tbody&gt;&#xD;&#xA;    &#xD;&#xA;    &lt;tr&gt;&#xD;&#xA;      &lt;td colspan=&#34;2&#34; class=&#34;infobox-image&#34;&gt;&#xD;&#xA;        &lt;a href=&#34;https://commons.wikimedia.org/wiki/File:SolME_running_MINIX_1.5.png&#34;&gt;&lt;img src=&#34;https://commons.wikimedia.org/wiki/Special:FilePath/SolME_running_MINIX_1.5.png?width=400&#34; alt=&#34;SolME running MINIX 1.5.&#34; loading=&#34;lazy&#34;&gt;&lt;/a&gt;&#xD;&#xA;        &lt;div class=&#34;infobox-caption&#34;&gt;SolME running MINIX 1.5.&lt;/div&gt;&#xD;&#xA;      &lt;/td&gt;&#xD;&#xA;    &lt;/tr&gt;&#xD;&#xA;    &#xD;&#xA;    &#xD;&#xA;&lt;tr&gt;&lt;th&gt;Developer&lt;/th&gt;&lt;td&gt;Blixsful / Rhadea&lt;/td&gt;&lt;/tr&gt;&#xD;&#xA;&lt;tr&gt;&lt;th&gt;Written in&lt;/th&gt;&lt;td&gt;C++&lt;/td&gt;&lt;/tr&gt;&#xD;&#xA;&lt;tr&gt;&lt;th&gt;Architecture&lt;/th&gt;&lt;td&gt;i86&lt;/td&gt;&lt;/tr&gt;&#xD;&#xA;&lt;tr&gt;&lt;th&gt;Source Code&lt;/th&gt;&lt;td&gt;&lt;a href=&#34;https://github.com/blixsful/solarius-me&#34;&gt;Github&lt;/a&gt;&lt;/td&gt;&lt;/tr&gt;&#xD;&#xA;&#xD;&#xA;  &lt;/tbody&gt;&#xD;&#xA;&lt;/table&gt;&#xA;&lt;p&gt;Solarius Machine Emulator (SolME) adalah perangkat lunak kecil yang mengemulasikan prosesor processor historis seperti i86 (x86_16) dan i386 (x86_32). Dikembangkan untuk membantu pengembangan sistem operasi edukasi unix like dengan arsitektur 32bit, yaitu [ClimaX]&lt;/p&gt;</description>
+			</item>
+	</channel>
+</rss>

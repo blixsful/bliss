@@ -1,0 +1,11 @@
+{{ $src := .Get "src" }}
+{{ $width := int (.Get "width" | default 220) }}
+{{ $side := .Get "side" | default "right" }}
+{{ $link := .Get "commons" | default $src }}
+{{ $alt := .Get "alt" | default (.Get "caption") }}
+<figure class="thumb t{{ $side }}">
+  <div class="thumbinner">
+    <a href="{{ $link }}"><img src="{{ if hasPrefix $src "http" }}{{ $src }}{{ else }}{{ $src | relURL }}{{ end }}" width="{{ $width }}" alt="{{ $alt }}" loading="lazy"></a>
+    <figcaption class="thumbcaption">{{ .Get "caption" | markdownify }}</figcaption>
+  </div>
+</figure>

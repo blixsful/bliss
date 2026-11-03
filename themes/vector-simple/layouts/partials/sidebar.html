@@ -1,0 +1,9 @@
+<div id="sidebar">
+  <a id="logo" href="{{ "/" | relURL }}" title="Home"></a>
+  <ul>
+    {{ range site.Menus.sidebar }}
+    {{ with .Params.heading }}<li class="heading">{{ . }}</li>{{ end }}
+    <li><a href="{{ .URL }}">{{ .Name }}</a></li>
+    {{ end }}
+  </ul>
+</div>

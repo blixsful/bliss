@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmallSol - Bliss</title>
+  
+  <link rel="stylesheet" href="/css/bundle.min.98d18ce7e728d6ae8c43b7cc3aa18ce1f96009baa81b46c78d97ed759605753b.css">
+</head>
+<body>
+  <div id="page-base"></div>
+  <div id="tabs"><a href="/smallsol/">Article</a></div>
+  <div id="content">
+    <h1 class="title">SmallSol</h1>
+    
+
+
+  
+  
+  
+
+<div class="body"><p>Panduan untuk membuat machine emulator kecil menggunakan go.</p>
+<p>Requirements:</p>
+<ul>
+<li>Pengetahuan dasar tentang golang, dan pengetahuan lebih lanjut dalam pemrograman.</li>
+<li>Host OS Linux / WSL (opsional, disarankan)</li>
+<li>Golang terinstall</li>
+<li>riscv64-unknown-elf-gcc terinstall</li>
+</ul>
+<p>Panduan ini akan memandu proses pembuatan emulasi mesin untuk RISC-V RV32i.</p>
+<div id="toc"><div class="toctitle"><h2>Contents</h2></div><nav id="TableOfContents">
+  <ul>
+    <li><a href="#konsep-dasar--permulaan">Konsep Dasar &amp; Permulaan</a>
+      <ul>
+        <li><a href="#struktur-proyek">Struktur Proyek</a></li>
+      </ul>
+    </li>
+    <li><a href="#decode">Decode</a></li>
+    <li><a href="#cpu-dan-memori-cpugo">CPU dan Memori (cpu.go)</a>
+      <ul>
+        <li><a href="#bagian-1">Bagian 1</a></li>
+        <li><a href="#bagian-2-eksekusi-instruksi">Bagian 2, eksekusi instruksi</a></li>
+        <li><a href="#bagian-3-syscall">Bagian 3, syscall</a></li>
+      </ul>
+    </li>
+    <li><a href="#program-utama-maingo">Program Utama (main.go)</a></li>
+    <li><a href="#coba-tes-testgo">Coba tes (test.go)</a></li>
+  </ul>
+</nav></div><h2 id="konsep-dasar--permulaan">Konsep Dasar &amp; Permulaan</h2>
+<p>CPU RV32I hanya butuh beberapa komponen:
+• 32 register 32-bit (x0–x31). x0 selalu bernilai 0.
+• Program counter (PC), alamat instruksi berikutnya.
+• Memori berupa array byte, little-endian.
+• Siklus fetch → decode → execute, diulang terus sampai program berhenti.</p>
+<p>Setiap instruksi RV32I berukuran tepat 32 bit dan punya 6 format (R, I, S, B, U, J). Perbedaan format hanya pada cara bit-bit immediate disusun.</p>
+<h3 id="struktur-proyek">Struktur Proyek</h3>
+<p>Struktur proyek akan terlihat seperti yang dibawah ini:</p>
+<pre tabindex="0"><code class="language-SmallSol/" data-lang="SmallSol/">--go.mod
+--decode.go
+--cpu.go
+--main.go
+--test.go  // File untuk tes
+</code></pre><p>Buat proyek:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir SmallSol <span class="o">&amp;&amp;</span> <span class="nb">cd</span> SmallSol
+</span></span><span class="line"><span class="cl">go mod init SmallSol
+</span></span></code></pre></div><h2 id="decode">Decode</h2>
+<p>Decode itu memecah instruksi ya.
+Ide utamanya: bungkus uint32 dalam tipe Inst lalu beri method untuk tiap field.</p>
+<pre tabindex="0"><code>package main
+
+// Opcode utama RV32I.
+const (
+	opLoad   = 0x03
+	opFence  = 0x0F
+	opImm    = 0x13
+	opAUIPC  = 0x17
+	opStore  = 0x23
+	opReg    = 0x33
+	opLUI    = 0x37
+	opBranch = 0x63
+	opJALR   = 0x67
+	opJAL    = 0x6F
+	opSystem = 0x73
+)
+
+type Inst uint32
+
+func (i Inst) Opcode() uint32 { return uint32(i) &amp; 0x7f }
+func (i Inst) Rd() uint32     { return uint32(i&gt;&gt;7) &amp; 0x1f }
+func (i Inst) Funct3() uint32 { return uint32(i&gt;&gt;12) &amp; 0x7 }
+func (i Inst) Rs1() uint32    { return uint32(i&gt;&gt;15) &amp; 0x1f }
+func (i Inst) Rs2() uint32    { return uint32(i&gt;&gt;20) &amp; 0x1f }
+func (i Inst) Funct7() uint32 { return uint32(i &gt;&gt; 25) }
+
+// Immediate. Konversi ke int32 lalu geser kanan = sign extension otomatis.
+
+func (i Inst) ImmI() int32 { return int32(i) &gt;&gt; 20 }
+
+func (i Inst) ImmS() int32 {
+	return int32(i)&gt;&gt;25&lt;&lt;5 | int32(i&gt;&gt;7)&amp;0x1f
+}
+
+func (i Inst) ImmB() int32 {
+	return int32(i)&gt;&gt;31&lt;&lt;12 |
+		int32(i&gt;&gt;7)&amp;1&lt;&lt;11 |
+		int32(i&gt;&gt;25)&amp;0x3f&lt;&lt;5 |
+		int32(i&gt;&gt;8)&amp;0xf&lt;&lt;1
+}
+
+func (i Inst) ImmU() uint32 { return uint32(i) &amp; 0xfffff000 }
+
+func (i Inst) ImmJ() int32 {
+	return int32(i)&gt;&gt;31&lt;&lt;20 |
+		int32(i)&amp;0xff000 |
+		int32(i&gt;&gt;20)&amp;1&lt;&lt;11 |
+		int32(i&gt;&gt;21)&amp;0x3ff&lt;&lt;1
+}
+</code></pre><h2 id="cpu-dan-memori-cpugo">CPU dan Memori (cpu.go)</h2>
+<h3 id="bagian-1">Bagian 1</h3>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;encoding/binary&#34;
+	&#34;fmt&#34;
+	&#34;os&#34;
+)
+
+type CPU struct {
+	Reg      [32]uint32
+	PC       uint32
+	Mem      []byte
+	Halted   bool
+	ExitCode int
+}
+
+func NewCPU(memSize int) *CPU {
+	c := &amp;CPU{Mem: make([]byte, memSize)}
+	c.Reg[2] = uint32(memSize) // sp di ujung memori
+	return c
+}
+
+func (c *CPU) setReg(rd, v uint32) {
+	if rd != 0 { // x0 hardwired ke 0
+		c.Reg[rd] = v
+	}
+}
+
+func (c *CPU) check(addr, size uint32) error {
+	if uint64(addr)+uint64(size) &gt; uint64(len(c.Mem)) {
+		return fmt.Errorf(&#34;akses memori di luar batas: 0x%08x&#34;, addr)
+	}
+	return nil
+}
+
+func (c *CPU) load(addr, size uint32) (uint32, error) {
+	if err := c.check(addr, size); err != nil {
+		return 0, err
+	}
+	switch size {
+	case 1:
+		return uint32(c.Mem[addr]), nil
+	case 2:
+		return uint32(binary.LittleEndian.Uint16(c.Mem[addr:])), nil
+	}
+	return binary.LittleEndian.Uint32(c.Mem[addr:]), nil
+}
+
+func (c *CPU) store(addr, size, v uint32) error {
+	if err := c.check(addr, size); err != nil {
+		return err
+	}
+	switch size {
+	case 1:
+		c.Mem[addr] = byte(v)
+	case 2:
+		binary.LittleEndian.PutUint16(c.Mem[addr:], uint16(v))
+	default:
+		binary.LittleEndian.PutUint32(c.Mem[addr:], v)
+	}
+	return nil
+}
+</code></pre><h3 id="bagian-2-eksekusi-instruksi">Bagian 2, eksekusi instruksi</h3>
+<pre tabindex="0"><code>func (c *CPU) Step() error {
+	raw, err := c.load(c.PC, 4)
+	if err != nil {
+		return err
+	}
+	i := Inst(raw)
+	next := c.PC + 4
+
+	switch i.Opcode() {
+	case opLUI:
+		c.setReg(i.Rd(), i.ImmU())
+
+	case opAUIPC:
+		c.setReg(i.Rd(), c.PC+i.ImmU())
+
+	case opJAL:
+		c.setReg(i.Rd(), next) // simpan alamat kembali
+		next = c.PC + uint32(i.ImmJ())
+
+	case opJALR:
+		// hitung target dulu, karena rd bisa sama dengan rs1
+		target := (c.Reg[i.Rs1()] + uint32(i.ImmI())) &amp;^ 1
+		c.setReg(i.Rd(), next)
+		next = target
+
+	case opBranch:
+		take, err := c.branchTaken(i)
+		if err != nil {
+			return err
+		}
+		if take {
+			next = c.PC + uint32(i.ImmB())
+		}
+
+	case opLoad:
+		if err := c.execLoad(i); err != nil {
+			return err
+		}
+
+	case opStore:
+		if err := c.execStore(i); err != nil {
+			return err
+		}
+
+	case opImm:
+		sra := i.Funct7() == 0x20 // hanya berarti untuk SRAI
+		res := alu(i.Funct3(), c.Reg[i.Rs1()], uint32(i.ImmI()), false, sra)
+		c.setReg(i.Rd(), res)
+
+	case opReg:
+		alt := i.Funct7() == 0x20 // SUB dan SRA
+		res := alu(i.Funct3(), c.Reg[i.Rs1()], c.Reg[i.Rs2()], alt, alt)
+		c.setReg(i.Rd(), res)
+
+	case opFence:
+		// tidak melakukan apa pun pada emulator satu-core
+
+	case opSystem:
+		switch i.ImmI() {
+		case 0: // ECALL
+			if err := c.ecall(); err != nil {
+				return err
+			}
+		case 1: // EBREAK
+			c.Halted = true
+		default:
+			return fmt.Errorf(&#34;instruksi SYSTEM tidak didukung di PC=0x%08x&#34;, c.PC)
+		}
+
+	default:
+		return fmt.Errorf(&#34;opcode tidak dikenal 0x%02x di PC=0x%08x&#34;, i.Opcode(), c.PC)
+	}
+
+	c.PC = next
+	return nil
+}
+</code></pre><p>Fungsi-fungsi pendukung:</p>
+<pre tabindex="0"><code>func b2u(b bool) uint32 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// alu dipakai bersama oleh format R dan I-ALU.
+func alu(f3, a, b uint32, sub, sra bool) uint32 {
+	switch f3 {
+	case 0: // ADD / SUB / ADDI
+		if sub {
+			return a - b
+		}
+		return a + b
+	case 1: // SLL
+		return a &lt;&lt; (b &amp; 31)
+	case 2: // SLT
+		return b2u(int32(a) &lt; int32(b))
+	case 3: // SLTU
+		return b2u(a &lt; b)
+	case 4: // XOR
+		return a ^ b
+	case 5: // SRL / SRA
+		if sra {
+			return uint32(int32(a) &gt;&gt; (b &amp; 31))
+		}
+		return a &gt;&gt; (b &amp; 31)
+	case 6: // OR
+		return a | b
+	}
+	return a &amp; b // AND
+}
+
+func (c *CPU) branchTaken(i Inst) (bool, error) {
+	a, b := c.Reg[i.Rs1()], c.Reg[i.Rs2()]
+	switch i.Funct3() {
+	case 0: // BEQ
+		return a == b, nil
+	case 1: // BNE
+		return a != b, nil
+	case 4: // BLT
+		return int32(a) &lt; int32(b), nil
+	case 5: // BGE
+		return int32(a) &gt;= int32(b), nil
+	case 6: // BLTU
+		return a &lt; b, nil
+	case 7: // BGEU
+		return a &gt;= b, nil
+	}
+	return false, fmt.Errorf(&#34;funct3 branch tidak valid&#34;)
+}
+
+func (c *CPU) execLoad(i Inst) error {
+	addr := c.Reg[i.Rs1()] + uint32(i.ImmI())
+	var v uint32
+	var err error
+	switch i.Funct3() {
+	case 0: // LB (sign-extend)
+		v, err = c.load(addr, 1)
+		v = uint32(int32(int8(v)))
+	case 1: // LH (sign-extend)
+		v, err = c.load(addr, 2)
+		v = uint32(int32(int16(v)))
+	case 2: // LW
+		v, err = c.load(addr, 4)
+	case 4: // LBU
+		v, err = c.load(addr, 1)
+	case 5: // LHU
+		v, err = c.load(addr, 2)
+	default:
+		return fmt.Errorf(&#34;funct3 load tidak valid&#34;)
+	}
+	if err != nil {
+		return err
+	}
+	c.setReg(i.Rd(), v)
+	return nil
+}
+
+func (c *CPU) execStore(i Inst) error {
+	addr := c.Reg[i.Rs1()] + uint32(i.ImmS())
+	v := c.Reg[i.Rs2()]
+	switch i.Funct3() {
+	case 0: // SB
+		return c.store(addr, 1, v)
+	case 1: // SH
+		return c.store(addr, 2, v)
+	case 2: // SW
+		return c.store(addr, 4, v)
+	}
+	return fmt.Errorf(&#34;funct3 store tidak valid&#34;)
+}
+</code></pre><h3 id="bagian-3-syscall">Bagian 3, syscall</h3>
+<p>Program butuh cara berhenti dan mencetak teks. Kita pinjam konvensi Linux RISC-V: nomor syscall di a7 (x17), argumen di a0–a2 (x10–x12).</p>
+<pre tabindex="0"><code>func (c *CPU) ecall() error {
+	switch c.Reg[17] { // a7
+	case 93:
+		c.Halted = true
+		c.ExitCode = int(int32(c.Reg[10]))
+	case 64:
+		buf, n := c.Reg[11], c.Reg[12]
+		if err := c.check(buf, n); err != nil {
+			return err
+		}
+		if c.Reg[10] == 1 {
+			os.Stdout.Write(c.Mem[buf : buf+n])
+		}
+		c.Reg[10] = n // nilai kembalian: jumlah byte tertulis
+	default:
+		return fmt.Errorf(&#34;syscall tidak dikenal: %d&#34;, c.Reg[17])
+	}
+	return nil
+}
+</code></pre><h2 id="program-utama-maingo">Program Utama (main.go)</h2>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;fmt&#34;
+	&#34;os&#34;
+)
+
+const memSize = 1 &lt;&lt; 20 // 1 MiB
+
+func main() {
+	if len(os.Args) &lt; 2 {
+		fmt.Fprintln(os.Stderr, &#34;pemakaian: rv32i program.bin&#34;)
+		os.Exit(2)
+	}
+	prog, err := os.ReadFile(os.Args[1])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
+	}
+
+	cpu := NewCPU(memSize)
+	copy(cpu.Mem, prog) // program dimuat di alamat 0, PC mulai 0
+
+	for !cpu.Halted {
+		if err := cpu.Step(); err != nil {
+			fmt.Fprintf(os.Stderr, &#34;error: %v (PC=0x%08x)\n&#34;, err, cpu.PC)
+			os.Exit(1)
+		}
+	}
+	os.Exit(cpu.ExitCode)
+}
+</code></pre><h2 id="coba-tes-testgo">Coba tes (test.go)</h2>
+<p>Kita coba rakit program kecil yang menghitung 5+7.</p>
+<pre tabindex="0"><code>package main
+
+import (
+	&#34;encoding/binary&#34;
+	&#34;testing&#34;
+)
+
+func TestAdd(t *testing.T) {
+	prog := []uint32{
+		0x00500093, // addi x1, x0, 5
+		0x00700113, // addi x2, x0, 7
+		0x002081B3, // add  x3, x1, x2
+		0x05d00893, // addi a7, x0, 93   (syscall exit)
+		0x00018513, // addi a0, x3, 0    (a0 = x3)
+		0x00000073, // ecall
+	}
+	cpu := NewCPU(1024)
+	for n, w := range prog {
+		binary.LittleEndian.PutUint32(cpu.Mem[n*4:], w)
+	}
+	for !cpu.Halted {
+		if err := cpu.Step(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if cpu.ExitCode != 12 {
+		t.Fatalf(&#34;exit code = %d, harapan 12&#34;, cpu.ExitCode)
+	}
+}
+</code></pre></div>
+
+  </div>
+  <div id="sidebar">
+  <a id="logo" href="/" title="Home"></a>
+  <ul>
+    
+    
+    <li><a href="/">Home</a></li>
+    
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li class="heading">SolME</li>
+    <li><a href="/solarius/">Solarius?</a></li>
+    
+    <li class="heading">ClimaX</li>
+    <li><a href="/climax/">ClimaX?</a></li>
+    
+    <li class="heading">Guides</li>
+    <li><a href="/smallsol/">SmallSol</a></li>
+    
+  </ul>
+</div>
+  <div id="footer">Bliss</div>
+</body>
+</html>
